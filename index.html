@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#176b45">
   <title>Longshots Leaderboard</title>
   <link rel="manifest" href="./manifest.json">
+
   <style>
     * { box-sizing: border-box; }
 
@@ -27,6 +28,7 @@
     }
 
     h1 { margin-top: 0; color: #176b45; }
+
     p { line-height: 1.5; }
 
     input, button {
@@ -44,7 +46,6 @@
       background: #176b45;
       color: white;
       font-weight: bold;
-      cursor: pointer;
     }
 
     #preview {
@@ -60,23 +61,28 @@
       border-radius: 8px;
       background: #f1f4f2;
       overflow-wrap: anywhere;
+      font-size: 14px;
     }
   </style>
 </head>
+
 <body>
   <main>
     <h1>⚽ Longshots</h1>
+
     <p id="intro">Your Longshots image-sharing app.</p>
 
     <label for="pin">Player PIN</label>
-    <input id="pin" type="password" inputmode="numeric"
-           autocomplete="current-password" placeholder="Enter your PIN">
+    <input id="pin" type="password"
+      inputmode="numeric"
+      autocomplete="current-password"
+      placeholder="Enter your PIN">
 
     <img id="preview" alt="Shared Longshots screenshot">
 
     <button id="submit">Continue</button>
 
-    <div id="status">Waiting for a screenshot or PIN.</div>
+    <div id="status">Checking app setup...</div>
   </main>
 
   <script>
@@ -84,7 +90,6 @@
     const preview = document.getElementById("preview");
     const statusBox = document.getElementById("status");
     const intro = document.getElementById("intro");
-    const submitButton = document.getElementById("submit");
 
     let sharedImage = null;
 
@@ -93,34 +98,40 @@
     }
 
     async function receiveSharedImage() {
-      const params = new URLSearchParams(window.location.search);
-      const shared = params.get("shared");
+      const params = new URLSearchParams(location.search);
 
-      if (shared !== "1") return;
+      if (params.get("shared") !== "1") {
+        showStatus("App loaded. Waiting for a shared screenshot.");
+        return;
+      }
 
       try {
         const cache = await caches.open("longshots-shared-images");
-        const response = await cache.match("./shared-image");
+        const imageUrl = new URL("shared-image", location.href);
+        const response = await cache.match(imageUrl);
 
         if (!response) {
-          showStatus("No shared image was found. Please try sharing it again.");
+          showStatus("No shared image found. Please share it again.");
           return;
         }
 
         sharedImage = await response.blob();
-
         preview.src = URL.createObjectURL(sharedImage);
         preview.style.display = "block";
-        intro.textContent = "Screenshot received. Enter your player PIN to continue.";
+
+        intro.textContent =
+          "Screenshot received. Enter your player PIN to continue.";
+
         showStatus("Image received successfully.");
       } catch (error) {
-        showStatus("Could not retrieve the shared image: " + error.message);
+        showStatus("Image retrieval error: " +
+          error.name + ": " + error.message);
       }
     }
 
-    submitButton.addEventListener("click", () => {
+    document.getElementById("submit").addEventListener("click", () => {
       if (!sharedImage) {
-        showStatus("No image received yet. Use Share Image from Longshots first.");
+        showStatus("No image received yet.");
         return;
       }
 
@@ -129,16 +140,40 @@
         return;
       }
 
-      showStatus("Image received. Secure upload connection is the next setup step.");
+      showStatus("Image received. Upload connection is not configured yet.");
     });
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js")
-        .then(() => receiveSharedImage())
-        .catch(error => showStatus("App setup error: " + error.message));
-    } else {
-      showStatus("This browser does not support the required sharing feature.");
+    async function startApp() {
+      if (!("serviceWorker" in navigator)) {
+        showStatus("This browser does not support service workers.");
+        return;
+      }
+
+      const workerUrl = new URL("sw.js?v=2", document.baseURI).href;
+      const appScope = new URL("./", document.baseURI).href;
+
+      try {
+        await navigator.serviceWorker.register(workerUrl, {
+          scope: appScope,
+          updateViaCache: "none"
+        });
+
+        showStatus("Service worker registered successfully.");
+
+        await receiveSharedImage();
+
+      } catch (error) {
+        showStatus(
+          "SERVICE WORKER ERROR\n\n" +
+          "Name: " + error.name + "\n\n" +
+          "Message: " + error.message + "\n\n" +
+          "Worker URL: " + workerUrl + "\n\n" +
+          "App scope: " + appScope
+        );
+      }
     }
+
+    startApp();
   </script>
 </body>
 </html>
