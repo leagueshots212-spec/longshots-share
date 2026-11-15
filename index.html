@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b45">
+  <title>Longshots Leaderboard</title>
+  <link rel="manifest" href="./manifest.json">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      font-family: Arial, sans-serif;
+      background: #f1f4f2;
+      color: #17231c;
+    }
+
+    main {
+      max-width: 480px;
+      margin: 35px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px #00000012;
+    }
+
+    h1 { margin-top: 0; color: #176b45; }
+    p { line-height: 1.5; }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input { border: 1px solid #bbb; }
+
+    button {
+      border: 0;
+      background: #176b45;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #preview {
+      display: none;
+      width: 100%;
+      margin-top: 18px;
+      border-radius: 8px;
+    }
+
+    #status {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f1f4f2;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>⚽ Longshots</h1>
+    <p id="intro">Your Longshots image-sharing app.</p>
+
+    <label for="pin">Player PIN</label>
+    <input id="pin" type="password" inputmode="numeric"
+           autocomplete="current-password" placeholder="Enter your PIN">
+
+    <img id="preview" alt="Shared Longshots screenshot">
+
+    <button id="submit">Continue</button>
+
+    <div id="status">Waiting for a screenshot or PIN.</div>
+  </main>
+
+  <script>
+    const pinInput = document.getElementById("pin");
+    const preview = document.getElementById("preview");
+    const statusBox = document.getElementById("status");
+    const intro = document.getElementById("intro");
+    const submitButton = document.getElementById("submit");
+
+    let sharedImage = null;
+
+    function showStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    async function receiveSharedImage() {
+      const params = new URLSearchParams(window.location.search);
+      const shared = params.get("shared");
+
+      if (shared !== "1") return;
+
+      try {
+        const cache = await caches.open("longshots-shared-images");
+        const response = await cache.match("./shared-image");
+
+        if (!response) {
+          showStatus("No shared image was found. Please try sharing it again.");
+          return;
+        }
+
+        sharedImage = await response.blob();
+
+        preview.src = URL.createObjectURL(sharedImage);
+        preview.style.display = "block";
+        intro.textContent = "Screenshot received. Enter your player PIN to continue.";
+        showStatus("Image received successfully.");
+      } catch (error) {
+        showStatus("Could not retrieve the shared image: " + error.message);
+      }
+    }
+
+    submitButton.addEventListener("click", () => {
+      if (!sharedImage) {
+        showStatus("No image received yet. Use Share Image from Longshots first.");
+        return;
+      }
+
+      if (!pinInput.value.trim()) {
+        showStatus("Please enter your player PIN.");
+        return;
+      }
+
+      showStatus("Image received. Secure upload connection is the next setup step.");
+    });
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js")
+        .then(() => receiveSharedImage())
+        .catch(error => showStatus("App setup error: " + error.message));
+    } else {
+      showStatus("This browser does not support the required sharing feature.");
+    }
+  </script>
+</body>
+</html>
