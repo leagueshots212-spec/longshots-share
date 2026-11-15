@@ -14,7 +14,7 @@ self.addEventListener("fetch", event => {
 
   if (
     event.request.method === "POST" &&
-    url.pathname.endsWith("/share/")
+    url.pathname.endsWith("/receive/")
   ) {
     event.respondWith(handleSharedImage(event.request));
   }
