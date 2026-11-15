@@ -2,7 +2,7 @@
 const CACHE_NAME = "longshots-shared-images";
 
 self.addEventListener("install", event => {
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", event => {
@@ -10,47 +10,77 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
+  const appPath = new URL(self.registration.scope).pathname;
 
   if (
-    event.request.method === "POST" &&
-    url.pathname.endsWith("/receive/")
+    request.method === "POST" &&
+    url.origin === self.location.origin &&
+    url.pathname === appPath
   ) {
-    event.respondWith(handleSharedImage(event.request));
+    event.respondWith(handleSharedImage(request));
   }
 });
 
 async function handleSharedImage(request) {
-  const contentType = request.headers.get("content-type") || "unknown";
-
   try {
-    const body = await request.arrayBuffer();
+    const formData = await request.formData();
 
-    let details =
-      "CONTENT TYPE: " + contentType +
-      "\nBODY SIZE: " + body.byteLength +
-      "\nURL: " + request.url;
+    // Accept either field name during the transition.
+    let files = [
+      ...formData.getAll("file"),
+      ...formData.getAll("screenshot")
+    ];
 
-    if (body.byteLength > 0) {
-      const preview = new TextDecoder().decode(
-        body.slice(0, Math.min(body.byteLength, 500))
+    const image = files.find(file =>
+      file instanceof File &&
+      file.size > 0 &&
+      file.type.startsWith("image/")
+    );
+
+    if (!image) {
+      return new Response(
+        "No image received. Form fields: " +
+        [...formData.keys()].join(", "),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        }
       );
-
-      details += "\n\nBODY PREVIEW:\n" + preview;
     }
 
-    return new Response(details, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain"
-      }
-    });
+    const cache = await caches.open(CACHE_NAME);
+
+    const imageKey = new URL(
+      "shared-image",
+      self.registration.scope
+    ).href;
+
+    await cache.put(
+      imageKey,
+      new Response(image, {
+        headers: {
+          "Content-Type": image.type,
+          "Content-Disposition": "inline"
+        }
+      })
+    );
+
+    const destination = new URL(
+      "?shared=1",
+      self.registration.scope
+    );
+
+    return Response.redirect(destination.href, 303);
 
   } catch (error) {
     return new Response(
-      "REQUEST ERROR: " + error.message,
+      "SHARE ERROR: " + error.message,
       {
-        status: 200,
+        status: 500,
         headers: {
           "Content-Type": "text/plain"
         }
