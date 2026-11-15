@@ -23,17 +23,16 @@
       "purpose": "any"
     }
   ],
-  "share_target": {
-    "action": "/longshots-share/share/",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "files": [
-        {
-          "name": "screenshot",
-          "accept": ["image/*"]
-        }
-      ]
-    }
+"share_target": {
+  "action": "/longshots-share/share/",
+  "method": "POST",
+  "enctype": "multipart/form-data",
+  "params": {
+    "files": [
+      {
+        "name": "file",
+        "accept": ["image/png", "image/jpeg", "image/webp"]
+      }
+    ]
   }
 }
