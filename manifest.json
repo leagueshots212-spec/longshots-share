@@ -25,7 +25,7 @@
     }
   ],
   "share_target": {
-    "action": "/longshots-share/share/",
+    "action": "/longshots-share/receive/",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
