@@ -1,4 +1,4 @@
-const CACHE_NAME = "longshots-share-v1";
+coconst CACHE_NAME = "longshots-shared-images";
 const IMAGE_PATH = "shared-image";
 
 self.addEventListener("install", event => {
