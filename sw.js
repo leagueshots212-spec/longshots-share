@@ -1,45 +1,51 @@
 const CACHE_NAME = "longshots-shared-images";
 
-self.addEventListener("install", function(event) {
+self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", function(event) {
+self.addEventListener("activate", event => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("fetch", function(event) {
-  const request = event.request;
-  const url = new URL(request.url);
+self.addEventListener("fetch", event => {
+  const url = new URL(event.request.url);
 
   if (
-    request.method === "POST" &&
+    event.request.method === "POST" &&
     url.pathname.endsWith("/share/")
   ) {
-    event.respondWith(handleSharedImage(request));
+    event.respondWith(handleSharedImage(event.request));
   }
 });
 
 async function handleSharedImage(request) {
   try {
-    const formData = await request.formData();
+    const contentType = request.headers.get("content-type") || "unknown";
+    const body = await request.clone().arrayBuffer();
+
+    let formData;
+
+    try {
+      formData = await request.formData();
+    } catch (error) {
+      return diagnostic(
+        "FORM DATA ERROR: " + error.message +
+        "\nContent type: " + contentType +
+        "\nBody size: " + body.byteLength
+      );
+    }
+
+    const fields = Array.from(formData.keys());
 
     let image = null;
 
-    // Look through every submitted field for an image.
-    for (const [fieldName, value] of formData.entries()) {
-      if (
-        value &&
-        typeof value.arrayBuffer === "function" &&
-        typeof value.type === "string"
-      ) {
-        const fileName = value.name || "";
-
-        const isImage =
-          value.type.startsWith("image/") ||
-          /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(fileName);
-
-        if (isImage) {
+    for (const [name, value] of formData.entries()) {
+      if (value && typeof value.arrayBuffer === "function") {
+        if (
+          (value.type || "").startsWith("image/") ||
+          /\.(jpg|jpeg|png|webp|gif)$/i.test(value.name || "")
+        ) {
           image = value;
           break;
         }
@@ -47,24 +53,18 @@ async function handleSharedImage(request) {
     }
 
     if (!image) {
-      const receivedFields = Array.from(formData.keys()).join(", ");
-
-      return new Response(
-        "No valid image received. Fields found: " +
-        (receivedFields || "none"),
-        { status: 400 }
+      return diagnostic(
+        "NO IMAGE FOUND" +
+        "\nFields: " + (fields.join(", ") || "none") +
+        "\nContent type: " + contentType +
+        "\nBody size: " + body.byteLength
       );
     }
 
     const cache = await caches.open(CACHE_NAME);
 
-    const imageUrl = new URL(
-      "shared-image",
-      self.registration.scope
-    );
-
     await cache.put(
-      imageUrl,
+      new URL("shared-image", self.registration.scope),
       new Response(image, {
         headers: {
           "Content-Type": image.type || "image/jpeg"
@@ -78,9 +78,15 @@ async function handleSharedImage(request) {
     );
 
   } catch (error) {
-    return new Response(
-      "Image receiving error: " + error.message,
-      { status: 500 }
-    );
+    return diagnostic("ERROR: " + error.message);
   }
+}
+
+function diagnostic(message) {
+  return new Response(message, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain"
+    }
+  });
 }
