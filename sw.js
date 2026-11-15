@@ -23,12 +23,37 @@ self.addEventListener("fetch", function(event) {
 async function handleSharedImage(request) {
   try {
     const formData = await request.formData();
-    const image = formData.get("screenshot");
 
-    if (!image || !image.type.startsWith("image/")) {
-      return new Response("No valid image received.", {
-        status: 400
-      });
+    let image = null;
+
+    // Look through every submitted field for an image.
+    for (const [fieldName, value] of formData.entries()) {
+      if (
+        value &&
+        typeof value.arrayBuffer === "function" &&
+        typeof value.type === "string"
+      ) {
+        const fileName = value.name || "";
+
+        const isImage =
+          value.type.startsWith("image/") ||
+          /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(fileName);
+
+        if (isImage) {
+          image = value;
+          break;
+        }
+      }
+    }
+
+    if (!image) {
+      const receivedFields = Array.from(formData.keys()).join(", ");
+
+      return new Response(
+        "No valid image received. Fields found: " +
+        (receivedFields || "none"),
+        { status: 400 }
+      );
     }
 
     const cache = await caches.open(CACHE_NAME);
@@ -42,7 +67,7 @@ async function handleSharedImage(request) {
       imageUrl,
       new Response(image, {
         headers: {
-          "Content-Type": image.type
+          "Content-Type": image.type || "image/jpeg"
         }
       })
     );
