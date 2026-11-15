@@ -1,49 +1,42 @@
-coconst CACHE_NAME = "longshots-shared-images";
-const IMAGE_PATH = "shared-image";
+const CACHE_NAME = "longshots-shared-images";
 
-self.addEventListener("install", event => {
-  event.waitUntil(self.skipWaiting());
+self.addEventListener("install", function(event) {
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener("activate", function(event) {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("fetch", event => {
-  const url = new URL(event.request.url);
+self.addEventListener("fetch", function(event) {
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Catch images shared from Android.
   if (
-    event.request.method === "POST" &&
+    request.method === "POST" &&
     url.pathname.endsWith("/share/")
   ) {
-    event.respondWith(receiveSharedImage(event.request));
-    return;
-  }
-
-  // Serve the app's normal pages from GitHub Pages.
-  if (event.request.method === "GET") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
+    event.respondWith(handleSharedImage(request));
   }
 });
 
-async function receiveSharedImage(request) {
+async function handleSharedImage(request) {
   try {
     const formData = await request.formData();
     const image = formData.get("screenshot");
 
-    if (!image || !image.type || !image.type.startsWith("image/")) {
-      return new Response("No valid image was received.", {
-        status: 400,
-        headers: { "Content-Type": "text/plain" }
+    if (!image || !image.type.startsWith("image/")) {
+      return new Response("No valid image received.", {
+        status: 400
       });
     }
 
     const cache = await caches.open(CACHE_NAME);
 
-    const imageUrl = new URL(IMAGE_PATH, self.registration.scope);
+    const imageUrl = new URL(
+      "shared-image",
+      self.registration.scope
+    );
 
     await cache.put(
       imageUrl,
@@ -54,17 +47,15 @@ async function receiveSharedImage(request) {
       })
     );
 
-    const destination = new URL(
-      "?shared=1",
-      self.registration.scope
+    return Response.redirect(
+      new URL("?shared=1", self.registration.scope).href,
+      303
     );
 
-    return Response.redirect(destination.toString(), 303);
-
   } catch (error) {
-    return new Response("Image receiving failed: " + error.message, {
-      status: 500,
-      headers: { "Content-Type": "text/plain" }
-    });
+    return new Response(
+      "Image receiving error: " + error.message,
+      { status: 500 }
+    );
   }
 }
