@@ -1,3 +1,4 @@
+
 const CACHE_NAME = "longshots-shared-images";
 
 self.addEventListener("install", event => {
@@ -20,73 +21,40 @@ self.addEventListener("fetch", event => {
 });
 
 async function handleSharedImage(request) {
+  const contentType = request.headers.get("content-type") || "unknown";
+
   try {
-    const contentType = request.headers.get("content-type") || "unknown";
-    const body = await request.clone().arrayBuffer();
+    const body = await request.arrayBuffer();
 
-    let formData;
+    let details =
+      "CONTENT TYPE: " + contentType +
+      "\nBODY SIZE: " + body.byteLength +
+      "\nURL: " + request.url;
 
-    try {
-      formData = await request.formData();
-    } catch (error) {
-      return diagnostic(
-        "FORM DATA ERROR: " + error.message +
-        "\nContent type: " + contentType +
-        "\nBody size: " + body.byteLength
+    if (body.byteLength > 0) {
+      const preview = new TextDecoder().decode(
+        body.slice(0, Math.min(body.byteLength, 500))
       );
+
+      details += "\n\nBODY PREVIEW:\n" + preview;
     }
 
-    const fields = Array.from(formData.keys());
-
-    let image = null;
-
-    for (const [name, value] of formData.entries()) {
-      if (value && typeof value.arrayBuffer === "function") {
-        if (
-          (value.type || "").startsWith("image/") ||
-          /\.(jpg|jpeg|png|webp|gif)$/i.test(value.name || "")
-        ) {
-          image = value;
-          break;
-        }
+    return new Response(details, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain"
       }
-    }
-
-    if (!image) {
-      return diagnostic(
-        "NO IMAGE FOUND" +
-        "\nFields: " + (fields.join(", ") || "none") +
-        "\nContent type: " + contentType +
-        "\nBody size: " + body.byteLength
-      );
-    }
-
-    const cache = await caches.open(CACHE_NAME);
-
-    await cache.put(
-      new URL("shared-image", self.registration.scope),
-      new Response(image, {
-        headers: {
-          "Content-Type": image.type || "image/jpeg"
-        }
-      })
-    );
-
-    return Response.redirect(
-      new URL("?shared=1", self.registration.scope).href,
-      303
-    );
+    });
 
   } catch (error) {
-    return diagnostic("ERROR: " + error.message);
+    return new Response(
+      "REQUEST ERROR: " + error.message,
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain"
+        }
+      }
+    );
   }
-}
-
-function diagnostic(message) {
-  return new Response(message, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/plain"
-    }
-  });
 }
