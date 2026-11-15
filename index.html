@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +29,6 @@
     }
 
     h1 { margin-top: 0; color: #176b45; }
-
     p { line-height: 1.5; }
 
     input, button {
@@ -61,6 +61,7 @@
       border-radius: 8px;
       background: #f1f4f2;
       overflow-wrap: anywhere;
+      white-space: pre-wrap;
       font-size: 14px;
     }
   </style>
@@ -123,9 +124,12 @@
           "Screenshot received. Enter your player PIN to continue.";
 
         showStatus("Image received successfully.");
+
       } catch (error) {
-        showStatus("Image retrieval error: " +
-          error.name + ": " + error.message);
+        showStatus(
+          "Image retrieval error: " +
+          error.name + ": " + error.message
+        );
       }
     }
 
@@ -140,7 +144,9 @@
         return;
       }
 
-      showStatus("Image received. Upload connection is not configured yet.");
+      showStatus(
+        "Image received. Secure upload connection is the next step."
+      );
     });
 
     async function startApp() {
@@ -149,18 +155,24 @@
         return;
       }
 
-      const workerUrl = new URL("sw.js?v=4", document.baseURI).href;
-      const appScope = new URL("./", document.baseURI).href;
+      const workerUrl =
+        new URL("sw.js?v=5", document.baseURI).href;
+
+      const appScope =
+        new URL("./", document.baseURI).href;
 
       try {
-   const registration = await navigator.serviceWorker.register(workerUrl, {
-  scope: appScope,
-  updateViaCache: "none"
-});
+        showStatus("Registering service worker...");
 
-await registration.update();
-await navigator.serviceWorker.ready;
-        });
+        const registration =
+          await navigator.serviceWorker.register(workerUrl, {
+            scope: appScope,
+            updateViaCache: "none"
+          });
+
+        await registration.update();
+
+        await navigator.serviceWorker.ready;
 
         showStatus("Service worker registered successfully.");
 
