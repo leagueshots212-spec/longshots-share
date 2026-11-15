@@ -5,164 +5,280 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#176b45">
-  <title>Longshots Leaderboard</title>
   <link rel="manifest" href="./manifest.json">
+  <title>Longshots Leaderboard</title>
 
   <style>
     * { box-sizing: border-box; }
 
     body {
-      margin: 0;
-      padding: 24px 16px;
       font-family: Arial, sans-serif;
       background: #f1f4f2;
-      color: #17231c;
+      margin: 0;
+      padding: 18px;
+      color: #202820;
     }
 
-    main {
+    .container {
       max-width: 480px;
-      margin: 35px auto;
-      padding: 25px;
+      margin: 20px auto;
       background: white;
+      padding: 22px;
       border-radius: 16px;
-      box-shadow: 0 4px 18px #00000012;
+      box-shadow: 0 3px 15px rgba(0,0,0,.06);
     }
 
-    h1 { margin-top: 0; color: #176b45; }
-    p { line-height: 1.5; }
+    h2 { margin-top: 0; }
+    h3 { margin-bottom: 12px; }
 
-    input, button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    input { border: 1px solid #bbb; }
-
-    button {
-      border: 0;
-      background: #176b45;
-      color: white;
+    label {
+      display: block;
+      margin: 18px 0 8px;
       font-weight: bold;
     }
 
-    #preview {
-      display: none;
+    input {
       width: 100%;
-      margin-top: 18px;
-      border-radius: 8px;
+      padding: 13px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 9px;
     }
 
-    #status {
-      margin-top: 18px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #f1f4f2;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-      font-size: 14px;
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 14px;
+      border: none;
+      border-radius: 9px;
+      background: #176b45;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
     }
+
+    button:disabled { opacity: .5; }
+    .secondary { background: #555; }
+
+    #appSection { display: none; }
+
+    .panel {
+      background: #f6f8f6;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 16px;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .player-row:last-child { border-bottom: none; }
+    .rank { font-weight: bold; min-width: 28px; }
+    .player-name { flex: 1; }
+    .score { font-weight: bold; text-align: right; }
+    .small { font-size: 12px; color: #666; margin-top: 4px; }
+    .winner { font-weight: bold; color: #176b45; }
+
+    #status {
+      margin-top: 16px;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .hint {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 10px;
+    }
+
+    .stat-box {
+      background: white;
+      border-radius: 9px;
+      padding: 11px;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: bold;
+      color: #176b45;
+    }
+
+    .history-card {
+      padding: 12px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .history-card:last-child { border-bottom: none; }
+
+    .history-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: bold;
+    }
+
+    .history-scores {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .history-scores span {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      padding: 9px;
+      text-align: center;
+    }
+
+    .muted { color: #777; font-weight: normal; }
+
+    #sharedPreview {
+      display: none;
+      width: 100%;
+      height: auto;
+      max-height: 420px;
+      object-fit: contain;
+      border-radius: 10px;
+      margin-top: 12px;
+      background: white;
+    }
+
+    #sharedPanel { display: none; }
   </style>
 </head>
 
 <body>
-  <main>
-    <h1>⚽ Longshots</h1>
+  <div class="container">
 
-    <p id="intro">Your Longshots image-sharing app.</p>
+    <h2>⚽ Longshots</h2>
+    <p>Two-player results and leaderboard.</p>
 
-    <label for="pin">Player PIN</label>
-    <input id="pin" type="password"
-      inputmode="numeric"
-      autocomplete="current-password"
-      placeholder="Enter your PIN">
+    <div id="loginSection">
 
-    <img id="preview" alt="Shared Longshots screenshot">
+      <label for="pin">Your player PIN</label>
 
-    <button id="submit">Continue</button>
+      <input
+        id="pin"
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder="Enter your PIN"
+      >
 
-    <div id="status">Checking app setup...</div>
-  </main>
+      <button id="loginButton" onclick="login()">
+        Log in
+      </button>
+
+    </div>
+
+    <div id="appSection">
+
+      <p id="welcome"></p>
+
+      <div id="sharedPanel" class="panel">
+        <h3>📸 Shared Screenshot</h3>
+        <p id="sharedMessage" class="hint"></p>
+        <img id="sharedPreview" alt="Shared Longshots screenshot">
+        <button id="sharedUploadButton" onclick="uploadSharedImage()">
+          Submit Shared Screenshot
+        </button>
+      </div>
+
+      <div class="panel">
+        <h3>🏆 Live Leaderboard</h3>
+        <div id="leaderboard">Loading leaderboard...</div>
+      </div>
+
+      <div class="panel">
+        <h3>⚽ Latest Daily Winners</h3>
+        <div id="winners">Loading results...</div>
+      </div>
+
+      <div class="panel">
+        <h3>📊 Recent Submissions</h3>
+        <div id="recentResults">Loading submissions...</div>
+      </div>
+
+      <div class="panel">
+        <h3>📚 Historical Results</h3>
+        <div id="history">Loading match history...</div>
+      </div>
+
+      <div class="panel">
+        <h3>⚔️ Head-to-Head</h3>
+        <div id="headToHead">Loading head-to-head statistics...</div>
+      </div>
+
+      <button onclick="refreshDashboard()">
+        Refresh Dashboard
+      </button>
+
+      <div class="panel">
+        <h3>Submit Today's Result</h3>
+
+        <label for="screenshot">Results screenshot</label>
+
+        <input
+          id="screenshot"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+        >
+
+        <p class="hint">
+          Upload the completed results image showing your seven scores and total yards.
+        </p>
+
+        <button id="submitButton" onclick="upload()">
+          Submit Results
+        </button>
+      </div>
+
+      <button class="secondary" onclick="logout()">
+        Log out
+      </button>
+
+    </div>
+
+    <p id="status"></p>
+
+  </div>
 
   <script>
-    const pinInput = document.getElementById("pin");
-    const preview = document.getElementById("preview");
-    const statusBox = document.getElementById("status");
-    const intro = document.getElementById("intro");
+    let sessionToken = "";
+    let sharedImageFile = null;
+    let sharedImageUrl = "";
 
-    let sharedImage = null;
+    const statusText = document.getElementById("status");
 
-    function showStatus(message) {
-      statusBox.textContent = message;
-    }
-
-    async function receiveSharedImage() {
-      const params = new URLSearchParams(location.search);
-
-      if (params.get("shared") !== "1") {
-        showStatus("App loaded. Waiting for a shared screenshot.");
-        return;
-      }
-
-      try {
-        const cache = await caches.open("longshots-shared-images");
-        const imageUrl = new URL("shared-image", location.href);
-        const response = await cache.match(imageUrl);
-
-        if (!response) {
-          showStatus("No shared image found. Please share it again.");
-          return;
-        }
-
-        sharedImage = await response.blob();
-        preview.src = URL.createObjectURL(sharedImage);
-        preview.style.display = "block";
-
-        intro.textContent =
-          "Screenshot received. Enter your player PIN to continue.";
-
-        showStatus("Image received successfully.");
-
-      } catch (error) {
-        showStatus(
-          "Image retrieval error: " +
-          error.name + ": " + error.message
-        );
-      }
-    }
-
-    document.getElementById("submit").addEventListener("click", () => {
-      if (!sharedImage) {
-        showStatus("No image received yet.");
-        return;
-      }
-
-      if (!pinInput.value.trim()) {
-        showStatus("Please enter your player PIN.");
-        return;
-      }
-
-      showStatus(
-        "Image received. Secure upload connection is the next step."
-      );
-    });
-
+    // Register the updated service worker.
     async function startApp() {
       if (!("serviceWorker" in navigator)) {
-        showStatus("This browser does not support service workers.");
+        statusText.textContent =
+          "Service workers are not supported by this browser.";
         return;
       }
 
-      const workerUrl =
-        new URL("sw.js?v=5", document.baseURI).href;
-
-      const appScope =
-        new URL("./", document.baseURI).href;
-
       try {
-        showStatus("Registering service worker...");
+        const workerUrl =
+          new URL("sw.js?v=6", document.baseURI).href;
+
+        const appScope =
+          new URL("./", document.baseURI).href;
 
         const registration =
           await navigator.serviceWorker.register(workerUrl, {
@@ -171,21 +287,551 @@
           });
 
         await registration.update();
-
         await navigator.serviceWorker.ready;
 
-        showStatus("Service worker registered successfully.");
+        statusText.textContent =
+          "Service worker registered successfully.";
 
         await receiveSharedImage();
 
       } catch (error) {
-        showStatus(
-          "SERVICE WORKER ERROR\n\n" +
-          "Name: " + error.name + "\n\n" +
-          "Message: " + error.message + "\n\n" +
-          "Worker URL: " + workerUrl + "\n\n" +
-          "App scope: " + appScope
+        statusText.textContent =
+          "Service worker error: " + error.message;
+      }
+    }
+
+    // Retrieve an image stored by the share-target service worker.
+    async function receiveSharedImage() {
+      const params = new URLSearchParams(location.search);
+
+      if (params.get("shared") !== "1") {
+        return;
+      }
+
+      try {
+        const cache = await caches.open("longshots-shared-images");
+
+        const imageKey = new URL(
+          "shared-image",
+          location.href
+        ).href;
+
+        const response = await cache.match(imageKey);
+
+        if (!response) {
+          statusText.textContent =
+            "The app opened, but no shared screenshot was found.";
+          return;
+        }
+
+        const blob = await response.blob();
+
+        sharedImageFile = new File(
+          [blob],
+          "longshots-shared-image.png",
+          { type: blob.type || "image/png" }
         );
+
+        if (sharedImageUrl) {
+          URL.revokeObjectURL(sharedImageUrl);
+        }
+
+        sharedImageUrl = URL.createObjectURL(blob);
+
+        document.getElementById("sharedPreview").src =
+          sharedImageUrl;
+
+        document.getElementById("sharedPreview").style.display =
+          "block";
+
+        document.getElementById("sharedPanel").style.display =
+          "block";
+
+        document.getElementById("sharedMessage").textContent =
+          "Your shared screenshot has been received. Log in and submit it below.";
+
+        statusText.textContent =
+          "Shared screenshot received successfully.";
+
+      } catch (error) {
+        statusText.textContent =
+          "Could not retrieve shared image: " + error.message;
+      }
+    }
+
+    function login() {
+      const pin =
+        document.getElementById("pin").value.trim();
+
+      const button =
+        document.getElementById("loginButton");
+
+      if (!pin) {
+        statusText.textContent =
+          "Please enter your PIN.";
+        return;
+      }
+
+      button.disabled = true;
+      statusText.textContent = "Checking PIN...";
+
+      google.script.run
+        .withSuccessHandler(result => {
+          sessionToken = result.token;
+
+          document.getElementById("pin").value = "";
+
+          document.getElementById("loginSection").style.display =
+            "none";
+
+          document.getElementById("appSection").style.display =
+            "block";
+
+          document.getElementById("welcome").textContent =
+            "Welcome, " + result.name;
+
+          statusText.textContent = "";
+          button.disabled = false;
+
+          refreshDashboard();
+
+          if (sharedImageFile) {
+            document.getElementById("sharedMessage").textContent =
+              "Screenshot ready. You can submit it now.";
+          }
+        })
+        .withFailureHandler(error => {
+          statusText.textContent =
+            error.message || "Login failed.";
+
+          button.disabled = false;
+        })
+        .authenticatePlayer(pin);
+    }
+
+    function refreshDashboard() {
+      if (!sessionToken) return;
+
+      [
+        "leaderboard",
+        "winners",
+        "recentResults",
+        "history",
+        "headToHead"
+      ].forEach(id => {
+        document.getElementById(id).textContent =
+          "Loading...";
+      });
+
+      google.script.run
+        .withSuccessHandler(showDashboard)
+        .withFailureHandler(error => {
+          statusText.textContent =
+            "Could not load dashboard: " + error.message;
+        })
+        .getDashboardData(sessionToken);
+    }
+
+    function showDashboard(data) {
+      renderLeaderboard(data.leaderboard || []);
+      renderWinners(data.winners || []);
+      renderRecent(data.recentResults || []);
+      renderHistory(data.history || []);
+
+      renderHeadToHead(
+        data.headToHead || {
+          games: 0,
+          draws: 0,
+          players: [],
+          biggestWin: null
+        }
+      );
+
+      statusText.textContent = "";
+    }
+
+    function renderLeaderboard(items) {
+      const target =
+        document.getElementById("leaderboard");
+
+      target.replaceChildren();
+
+      if (!items.length) {
+        target.textContent = "No results recorded yet.";
+        return;
+      }
+
+      items.forEach(player => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        const rank = document.createElement("div");
+        rank.className = "rank";
+        rank.textContent = "#" + player.rank;
+
+        const details = document.createElement("div");
+        details.className = "player-name";
+
+        const name = document.createElement("strong");
+        name.textContent = player.name;
+
+        const stats = document.createElement("div");
+        stats.className = "small";
+
+        stats.textContent =
+          player.games + " games · " +
+          player.wins + " wins · Average " +
+          player.average;
+
+        details.append(name, stats);
+
+        const score = document.createElement("div");
+        score.className = "score";
+        score.textContent = player.total + " yds";
+
+        row.append(rank, details, score);
+        target.appendChild(row);
+      });
+    }
+
+    function renderWinners(items) {
+      const target =
+        document.getElementById("winners");
+
+      target.replaceChildren();
+
+      if (!items.length) {
+        target.textContent =
+          "No daily winners recorded yet.";
+        return;
+      }
+
+      items.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        const details = document.createElement("div");
+        details.className = "player-name";
+
+        const name = document.createElement("div");
+        name.className = "winner";
+        name.textContent = item.winner;
+
+        const date = document.createElement("div");
+        date.className = "small";
+
+        date.textContent =
+          "Match Day #" + item.game + " · " + item.date;
+
+        details.append(name, date);
+
+        const score = document.createElement("div");
+        score.className = "score";
+
+        score.textContent =
+          item.winningScore + " - " + item.losingScore;
+
+        row.append(details, score);
+        target.appendChild(row);
+      });
+    }
+
+    function renderRecent(items) {
+      const target =
+        document.getElementById("recentResults");
+
+      target.replaceChildren();
+
+      if (!items.length) {
+        target.textContent =
+          "No submissions recorded yet.";
+        return;
+      }
+
+      items.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        const details = document.createElement("div");
+        details.className = "player-name";
+
+        const name = document.createElement("strong");
+        name.textContent = item.player;
+
+        const date = document.createElement("div");
+        date.className = "small";
+
+        date.textContent =
+          "Match Day #" + item.game + " · " +
+          item.date + " · " + item.category;
+
+        details.append(name, date);
+
+        const score = document.createElement("div");
+        score.className = "score";
+        score.textContent = item.score + " yds";
+
+        row.append(details, score);
+        target.appendChild(row);
+      });
+    }
+
+    function renderHistory(items) {
+      const target =
+        document.getElementById("history");
+
+      target.replaceChildren();
+
+      if (!items.length) {
+        target.textContent =
+          "No historical results recorded yet.";
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "history-card";
+
+        const top = document.createElement("div");
+        top.className = "history-top";
+
+        const game = document.createElement("span");
+        game.textContent = "Match Day #" + item.game;
+
+        const date = document.createElement("span");
+        date.className = "small";
+        date.textContent = item.date;
+
+        top.append(game, date);
+
+        const scores = document.createElement("div");
+        scores.className = "history-scores";
+
+        scores.append(
+          makeScore(item.firstName, item.firstScore),
+          makeScore(item.secondName, item.secondScore)
+        );
+
+        const outcome = document.createElement("div");
+        outcome.className = "small";
+
+        outcome.textContent =
+          item.winner === "Awaiting both results"
+            ? "Awaiting both results"
+            : (
+                item.winner === "Draw"
+                  ? "Draw"
+                  : item.winner + " won by " +
+                    item.margin + " yds"
+              );
+
+        card.append(top, scores, outcome);
+        target.appendChild(card);
+      });
+    }
+
+    function makeScore(name, score) {
+      const span = document.createElement("span");
+
+      const strong = document.createElement("strong");
+
+      strong.textContent =
+        score === null ? "—" : score + " yds";
+
+      const label = document.createElement("div");
+      label.className = "small";
+      label.textContent = name;
+
+      span.append(strong, label);
+
+      return span;
+    }
+
+    function renderHeadToHead(data) {
+      const target =
+        document.getElementById("headToHead");
+
+      target.replaceChildren();
+
+      if (!data.players || data.players.length < 2) {
+        target.textContent =
+          "Add two active players to view head-to-head statistics.";
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "stat-grid";
+
+      addStat(grid, "Completed games", data.games);
+      addStat(grid, "Draws", data.draws);
+
+      data.players.forEach(player => {
+        addStat(grid, player.name + " wins", player.wins);
+        addStat(grid, player.name + " average", player.average + " yds");
+        addStat(grid, player.name + " highest", player.highest + " yds");
+        addStat(grid, player.name + " total", player.total + " yds");
+      });
+
+      target.appendChild(grid);
+
+      const biggest = document.createElement("p");
+      biggest.className = "small";
+
+      biggest.textContent = data.biggestWin
+        ? "Biggest win: " + data.biggestWin.winner +
+          " by " + data.biggestWin.margin +
+          " yds · Match Day #" + data.biggestWin.game +
+          " · " + data.biggestWin.date
+        : "Biggest win: not available yet.";
+
+      target.appendChild(biggest);
+    }
+
+    function addStat(parent, label, value) {
+      const box = document.createElement("div");
+      box.className = "stat-box";
+
+      const number = document.createElement("div");
+      number.className = "stat-number";
+      number.textContent = value;
+
+      const caption = document.createElement("div");
+      caption.className = "small";
+      caption.textContent = label;
+
+      box.append(number, caption);
+      parent.appendChild(box);
+    }
+
+    function uploadSharedImage() {
+      if (!sharedImageFile) {
+        statusText.textContent =
+          "No shared screenshot is available.";
+        return;
+      }
+
+      uploadFile(sharedImageFile);
+    }
+
+    function upload() {
+      const file =
+        document.getElementById("screenshot").files[0];
+
+      if (!file) {
+        statusText.textContent =
+          "Please select a screenshot.";
+        return;
+      }
+
+      uploadFile(file);
+    }
+
+    function uploadFile(file) {
+      if (!sessionToken) {
+        statusText.textContent =
+          "Please log in again.";
+        return;
+      }
+
+      if (!file) {
+        statusText.textContent =
+          "Please select a screenshot.";
+        return;
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        statusText.textContent =
+          "Image is too large. Maximum size is 8MB.";
+        return;
+      }
+
+      const button = sharedImageFile === file
+        ? document.getElementById("sharedUploadButton")
+        : document.getElementById("submitButton");
+
+      button.disabled = true;
+
+      statusText.textContent =
+        "Uploading and checking your result...";
+
+      const reader = new FileReader();
+
+      reader.onload = event => {
+        const base64 =
+          event.target.result.split(",")[1];
+
+        google.script.run
+          .withSuccessHandler(message => {
+            statusText.textContent = message;
+            button.disabled = false;
+
+            if (sharedImageFile === file) {
+              sharedImageFile = null;
+
+              document.getElementById("sharedPanel").style.display =
+                "none";
+
+              caches.open("longshots-shared-images")
+                .then(cache => cache.delete(
+                  new URL("shared-image", location.href).href
+                ));
+
+              if (sharedImageUrl) {
+                URL.revokeObjectURL(sharedImageUrl);
+                sharedImageUrl = "";
+              }
+            } else {
+              document.getElementById("screenshot").value = "";
+            }
+
+            if (message.includes("successfully")) {
+              refreshDashboard();
+            }
+          })
+          .withFailureHandler(error => {
+            statusText.textContent =
+              "Processing failed: " + error.message;
+
+            button.disabled = false;
+          })
+          .submitScreenshot(
+            sessionToken,
+            file.name,
+            file.type,
+            base64
+          );
+      };
+
+      reader.onerror = () => {
+        statusText.textContent =
+          "Could not read the image.";
+
+        button.disabled = false;
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function logout() {
+      const tokenToClose = sessionToken;
+
+      sessionToken = "";
+
+      document.getElementById("pin").value = "";
+      document.getElementById("screenshot").value = "";
+
+      document.getElementById("loginSection").style.display =
+        "block";
+
+      document.getElementById("appSection").style.display =
+        "none";
+
+      document.getElementById("loginButton").disabled = false;
+
+      statusText.textContent = "You have logged out.";
+
+      if (tokenToClose) {
+        google.script.run.logoutPlayer(tokenToClose);
       }
     }
 
