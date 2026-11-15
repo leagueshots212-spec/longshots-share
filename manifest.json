@@ -25,13 +25,13 @@
     }
   ],
   "share_target": {
-    "action": "/longshots-share/receive/",
+    "action": "/longshots-share/",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
       "files": [
         {
-          "name": "screenshot",
+          "name": "file",
           "accept": ["image/*"]
         }
       ]
