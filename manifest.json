@@ -1,0 +1,27 @@
+{
+  "name": "Longshots Leaderboard",
+  "short_name": "Longshots",
+  "description": "Submit Longshots results directly from Android Share Image.",
+  "start_url": "/longshots-share/",
+  "scope": "/longshots-share/",
+  "display": "standalone",
+  "background_color": "#f1f4f2",
+  "theme_color": "#176b45",
+  "orientation": "portrait",
+  "icons": [],
+  "share_target": {
+    "action": "/longshots-share/share/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "screenshot",
+          "accept": [
+            "image/*"
+          ]
+        }
+      ]
+    }
+  }
+}
